@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, useHistory, Switch } from "react-router-dom";
+import { Route, Switch, useHistory } from "react-router-dom";
 import Header from "./Header";
 import Main from "./Main";
 import Footer from "./Footer";
@@ -10,11 +10,11 @@ import { CurrentUserContext } from "../contexts/CurrentUserContext";
 import EditProfilePopup from "./EditProfilePopup";
 import EditAvatarPopup from "./EditAvatarPopup";
 import AddPlacePopup from "./AddPlacePopup";
-import Register from "./Register";
-import Login from "./Login";
+import Register from "../../microfrontend/auth-microfrontend/src/components/Register";
+import Login from "../../microfrontend/auth-microfrontend/src/components/Login";
 import InfoTooltip from "./InfoTooltip";
 import ProtectedRoute from "./ProtectedRoute";
-import * as auth from "../utils/auth.js";
+import * as auth from "../../microfrontend/auth-microfrontend/src/utils/auth.js";
 
 function App() {
   const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] =
@@ -111,12 +111,12 @@ function App() {
   }
 
   function handleCardLike(card) {
-    const isLiked = card.likes.some((i) => i._id === currentUser._id);
+    const isLiked = card.likes.some((i) => i._id===currentUser._id);
     api
       .changeLikeCardStatus(card._id, !isLiked)
       .then((newCard) => {
         setCards((cards) =>
-          cards.map((c) => (c._id === card._id ? newCard : c))
+          cards.map((c) => (c._id===card._id ? newCard:c))
         );
       })
       .catch((err) => console.log(err));
@@ -126,7 +126,7 @@ function App() {
     api
       .removeCard(card._id)
       .then(() => {
-        setCards((cards) => cards.filter((c) => c._id !== card._id));
+        setCards((cards) => cards.filter((c) => c._id!==card._id));
       })
       .catch((err) => console.log(err));
   }
@@ -141,7 +141,7 @@ function App() {
       .catch((err) => console.log(err));
   }
 
-  function onRegister({ email, password }) {
+  function onRegister({email, password}) {
     auth
       .register(email, password)
       .then((res) => {
@@ -155,7 +155,7 @@ function App() {
       });
   }
 
-  function onLogin({ email, password }) {
+  function onLogin({email, password}) {
     auth
       .login(email, password)
       .then((res) => {
@@ -181,7 +181,7 @@ function App() {
     // В компонент App внедрён контекст через CurrentUserContext.Provider
     <CurrentUserContext.Provider value={currentUser}>
       <div className="page__content">
-        <Header email={email} onSignOut={onSignOut} />
+        <Header email={email} onSignOut={onSignOut}/>
         <Switch>
           {/*Роут / защищён HOC-компонентом ProtectedRoute*/}
           <ProtectedRoute
@@ -199,13 +199,13 @@ function App() {
           />
           {/*Роут /signup и /signin не является защищёнными, т.е оборачивать их в HOC ProtectedRoute не нужно.*/}
           <Route path="/signup">
-            <Register onRegister={onRegister} />
+            <Register onRegister={onRegister}/>
           </Route>
           <Route path="/signin">
-            <Login onLogin={onLogin} />
+            <Login onLogin={onLogin}/>
           </Route>
         </Switch>
-        <Footer />
+        <Footer/>
         <EditProfilePopup
           isOpen={isEditProfilePopupOpen}
           onUpdateUser={handleUpdateUser}
@@ -216,13 +216,13 @@ function App() {
           onAddPlace={handleAddPlaceSubmit}
           onClose={closeAllPopups}
         />
-        <PopupWithForm title="Вы уверены?" name="remove-card" buttonText="Да" />
+        <PopupWithForm title="Вы уверены?" name="remove-card" buttonText="Да"/>
         <EditAvatarPopup
           isOpen={isEditAvatarPopupOpen}
           onUpdateAvatar={handleUpdateAvatar}
           onClose={closeAllPopups}
         />
-        <ImagePopup card={selectedCard} onClose={closeAllPopups} />
+        <ImagePopup card={selectedCard} onClose={closeAllPopups}/>
         <InfoTooltip
           isOpen={isInfoToolTipOpen}
           onClose={closeAllPopups}

@@ -1,41 +1,43 @@
-import React from "react";
-import { Route, Switch, useHistory } from "react-router-dom";
+import React, { lazy, Suspense, useContext } from "react";
+import { Switch } from "react-router-dom";
 import Header from "./Header";
 import Main from "./Main";
 import Footer from "./Footer";
-import PopupWithForm from "./PopupWithForm";
-import ImagePopup from "./ImagePopup";
-import api from "../utils/api";
-import { CurrentUserContext } from "../contexts/CurrentUserContext";
-import EditProfilePopup from "./EditProfilePopup";
-import EditAvatarPopup from "./EditAvatarPopup";
-import AddPlacePopup from "./AddPlacePopup";
-import Register from "../../microfrontend/auth-microfrontend/src/components/Register";
-import Login from "../../microfrontend/auth-microfrontend/src/components/Login";
-import InfoTooltip from "./InfoTooltip";
+import api from "../../shared-library/src/utils/api";
+import { CurrentUserContext } from "../../shared-library/src";
 import ProtectedRoute from "./ProtectedRoute";
-import * as auth from "../../microfrontend/auth-microfrontend/src/utils/auth.js";
+import { useHandleAddPlaceClick, useHandleCardClick, useHandleCardDelete, useHandleCardLike } from "mesto_cards/hooks";
+import { useCloseAllPopups } from "../../shared-library/src/utils/hooks";
+import { useHandleSignOut } from "mesto_auth/hooks";
+import InfoTooltip from "mesto_auth/InfoTooltip";
+
+const AuthApp = lazy(() => import('mesto_auth/App'));
+const CardApp = lazy(() => import('mesto_cards/App'));
 
 function App() {
-  const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] =
-    React.useState(false);
-  const [isAddPlacePopupOpen, setIsAddPlacePopupOpen] = React.useState(false);
-  const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] =
-    React.useState(false);
-  const [selectedCard, setSelectedCard] = React.useState(null);
-  const [cards, setCards] = React.useState([]);
 
-  // В корневом компоненте App создана стейт-переменная currentUser. Она используется в качестве значения для провайдера контекста.
-  const [currentUser, setCurrentUser] = React.useState({});
+  const context = useContext(CurrentUserContext);
 
-  const [isInfoToolTipOpen, setIsInfoToolTipOpen] = React.useState(false);
-  const [tooltipStatus, setTooltipStatus] = React.useState("");
+  const {
+    isLoggedIn,
+    email,
+    tooltipStatus,
+    isEditProfilePopupOpen,
+    setIsEditProfilePopupOpen,
+    isEditAvatarPopupOpen,
+    setIsEditAvatarPopupOpen,
+    cards,
+    setCards,
+    setCurrentUser,
+    isInfoToolTipOpen,
+  } = context;
 
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  //В компоненты добавлены новые стейт-переменные: email — в компонент App
-  const [email, setEmail] = React.useState("");
-
-  const history = useHistory();
+  const handleAddPlaceClick = useHandleAddPlaceClick();
+  const handleCardClick = useHandleCardClick();
+  const handleCardLike = useHandleCardLike();
+  const handleCardDelete = useHandleCardDelete();
+  const closeAllPopups = useCloseAllPopups();
+  const onSignOut = useHandleSignOut();
 
   // Запрос к API за информацией о пользователе и массиве карточек выполняется единожды, при монтировании.
   React.useEffect(() => {
@@ -48,47 +50,14 @@ function App() {
       .catch((err) => console.log(err));
   }, []);
 
-  // при монтировании App описан эффект, проверяющий наличие токена и его валидности
-  React.useEffect(() => {
-    const token = localStorage.getItem("jwt");
-    if (token) {
-      auth
-        .checkToken(token)
-        .then((res) => {
-          setEmail(res.data.email);
-          setIsLoggedIn(true);
-          history.push("/");
-        })
-        .catch((err) => {
-          localStorage.removeItem("jwt");
-          console.log(err);
-        });
-    }
-  }, [history]);
-
   function handleEditProfileClick() {
     setIsEditProfilePopupOpen(true);
-  }
-
-  function handleAddPlaceClick() {
-    setIsAddPlacePopupOpen(true);
   }
 
   function handleEditAvatarClick() {
     setIsEditAvatarPopupOpen(true);
   }
 
-  function closeAllPopups() {
-    setIsEditProfilePopupOpen(false);
-    setIsAddPlacePopupOpen(false);
-    setIsEditAvatarPopupOpen(false);
-    setIsInfoToolTipOpen(false);
-    setSelectedCard(null);
-  }
-
-  function handleCardClick(card) {
-    setSelectedCard(card);
-  }
 
   function handleUpdateUser(userUpdate) {
     api
@@ -110,77 +79,9 @@ function App() {
       .catch((err) => console.log(err));
   }
 
-  function handleCardLike(card) {
-    const isLiked = card.likes.some((i) => i._id===currentUser._id);
-    api
-      .changeLikeCardStatus(card._id, !isLiked)
-      .then((newCard) => {
-        setCards((cards) =>
-          cards.map((c) => (c._id===card._id ? newCard:c))
-        );
-      })
-      .catch((err) => console.log(err));
-  }
-
-  function handleCardDelete(card) {
-    api
-      .removeCard(card._id)
-      .then(() => {
-        setCards((cards) => cards.filter((c) => c._id!==card._id));
-      })
-      .catch((err) => console.log(err));
-  }
-
-  function handleAddPlaceSubmit(newCard) {
-    api
-      .addCard(newCard)
-      .then((newCardFull) => {
-        setCards([newCardFull, ...cards]);
-        closeAllPopups();
-      })
-      .catch((err) => console.log(err));
-  }
-
-  function onRegister({email, password}) {
-    auth
-      .register(email, password)
-      .then((res) => {
-        setTooltipStatus("success");
-        setIsInfoToolTipOpen(true);
-        history.push("/signin");
-      })
-      .catch((err) => {
-        setTooltipStatus("fail");
-        setIsInfoToolTipOpen(true);
-      });
-  }
-
-  function onLogin({email, password}) {
-    auth
-      .login(email, password)
-      .then((res) => {
-        setIsLoggedIn(true);
-        setEmail(email);
-        history.push("/");
-      })
-      .catch((err) => {
-        setTooltipStatus("fail");
-        setIsInfoToolTipOpen(true);
-      });
-  }
-
-  function onSignOut() {
-    // при вызове обработчика onSignOut происходит удаление jwt
-    localStorage.removeItem("jwt");
-    setIsLoggedIn(false);
-    // После успешного вызова обработчика onSignOut происходит редирект на /signin
-    history.push("/signin");
-  }
-
   return (
-    // В компонент App внедрён контекст через CurrentUserContext.Provider
-    <CurrentUserContext.Provider value={currentUser}>
-      <div className="page__content">
+    <div className="page__content">
+      <Suspense fallback={<div>Loading...</div>}>
         <Header email={email} onSignOut={onSignOut}/>
         <Switch>
           {/*Роут / защищён HOC-компонентом ProtectedRoute*/}
@@ -197,39 +98,27 @@ function App() {
             onCardDelete={handleCardDelete}
             loggedIn={isLoggedIn}
           />
-          {/*Роут /signup и /signin не является защищёнными, т.е оборачивать их в HOC ProtectedRoute не нужно.*/}
-          <Route path="/signup">
-            <Register onRegister={onRegister}/>
-          </Route>
-          <Route path="/signin">
-            <Login onLogin={onLogin}/>
-          </Route>
+          <AuthApp/>
         </Switch>
         <Footer/>
-        <EditProfilePopup
-          isOpen={isEditProfilePopupOpen}
-          onUpdateUser={handleUpdateUser}
-          onClose={closeAllPopups}
-        />
-        <AddPlacePopup
-          isOpen={isAddPlacePopupOpen}
-          onAddPlace={handleAddPlaceSubmit}
-          onClose={closeAllPopups}
-        />
-        <PopupWithForm title="Вы уверены?" name="remove-card" buttonText="Да"/>
-        <EditAvatarPopup
-          isOpen={isEditAvatarPopupOpen}
-          onUpdateAvatar={handleUpdateAvatar}
-          onClose={closeAllPopups}
-        />
-        <ImagePopup card={selectedCard} onClose={closeAllPopups}/>
+        {/*<EditProfilePopup*/}
+        {/*  isOpen={isEditProfilePopupOpen}*/}
+        {/*  onUpdateUser={handleUpdateUser}*/}
+        {/*  onClose={closeAllPopups}*/}
+        {/*/>*/}
+        {/*<EditAvatarPopup*/}
+        {/*  isOpen={isEditAvatarPopupOpen}*/}
+        {/*  onUpdateAvatar={handleUpdateAvatar}*/}
+        {/*  onClose={closeAllPopups}*/}
+        {/*/>*/}
         <InfoTooltip
           isOpen={isInfoToolTipOpen}
           onClose={closeAllPopups}
           status={tooltipStatus}
         />
-      </div>
-    </CurrentUserContext.Provider>
+        <CardApp/>
+      </Suspense>
+    </div>
   );
 }
 

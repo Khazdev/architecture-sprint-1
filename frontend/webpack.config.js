@@ -11,6 +11,10 @@ module.exports = {
     clean: true,
   },
   devServer: {
+    headers: {
+      'Access-Control-Allow-Origin': '*', // Allow all origins or specify your main app's URL
+      'Access-Control-Allow-Credentials': 'true',
+    },
     static: {
       directory: path.join(__dirname, "dist"),
     },
@@ -48,6 +52,8 @@ module.exports = {
       filename: "remoteEntry.js",
       remotes: {
         mesto_auth: "mesto_auth@http://localhost:9001/remoteEntry.js",
+        mesto_cards: "mesto_cards@http://localhost:9002/remoteEntry.js",
+        mesto_profile: "mesto_profile@http://localhost:9003/remoteEntry.js",
       },
       shared: {
         react: {
@@ -59,12 +65,10 @@ module.exports = {
         "react-router-dom": {
           singleton: true,
         },
-        redux: {
+        'shared-library': {
           singleton: true,
-        },
-        "react-redux": {
-          singleton: true,
-        },
+          eager: true
+        }
       },
     }),
   ],

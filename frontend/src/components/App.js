@@ -10,9 +10,11 @@ import { useHandleAddPlaceClick, useHandleCardClick, useHandleCardDelete, useHan
 import { useCloseAllPopups } from "../../shared-library/src/utils/hooks";
 import { useHandleSignOut } from "mesto_auth/hooks";
 import InfoTooltip from "mesto_auth/InfoTooltip";
+import { useHandleEditAvatarClick, useHandleEditProfileClick } from "../../microfrontend/profile-app/src/utils/hooks";
 
 const AuthApp = lazy(() => import('mesto_auth/App'));
 const CardApp = lazy(() => import('mesto_cards/App'));
+const ProfileApp = lazy(() => import('mesto_profile/App'));
 
 function App() {
 
@@ -22,10 +24,6 @@ function App() {
     isLoggedIn,
     email,
     tooltipStatus,
-    isEditProfilePopupOpen,
-    setIsEditProfilePopupOpen,
-    isEditAvatarPopupOpen,
-    setIsEditAvatarPopupOpen,
     cards,
     setCards,
     setCurrentUser,
@@ -38,6 +36,8 @@ function App() {
   const handleCardDelete = useHandleCardDelete();
   const closeAllPopups = useCloseAllPopups();
   const onSignOut = useHandleSignOut();
+  const handleEditAvatarClick = useHandleEditAvatarClick();
+  const handleEditProfileClick = useHandleEditProfileClick();
 
   // Запрос к API за информацией о пользователе и массиве карточек выполняется единожды, при монтировании.
   React.useEffect(() => {
@@ -49,35 +49,6 @@ function App() {
       })
       .catch((err) => console.log(err));
   }, []);
-
-  function handleEditProfileClick() {
-    setIsEditProfilePopupOpen(true);
-  }
-
-  function handleEditAvatarClick() {
-    setIsEditAvatarPopupOpen(true);
-  }
-
-
-  function handleUpdateUser(userUpdate) {
-    api
-      .setUserInfo(userUpdate)
-      .then((newUserData) => {
-        setCurrentUser(newUserData);
-        closeAllPopups();
-      })
-      .catch((err) => console.log(err));
-  }
-
-  function handleUpdateAvatar(avatarUpdate) {
-    api
-      .setUserAvatar(avatarUpdate)
-      .then((newUserData) => {
-        setCurrentUser(newUserData);
-        closeAllPopups();
-      })
-      .catch((err) => console.log(err));
-  }
 
   return (
     <div className="page__content">
@@ -101,16 +72,7 @@ function App() {
           <AuthApp/>
         </Switch>
         <Footer/>
-        {/*<EditProfilePopup*/}
-        {/*  isOpen={isEditProfilePopupOpen}*/}
-        {/*  onUpdateUser={handleUpdateUser}*/}
-        {/*  onClose={closeAllPopups}*/}
-        {/*/>*/}
-        {/*<EditAvatarPopup*/}
-        {/*  isOpen={isEditAvatarPopupOpen}*/}
-        {/*  onUpdateAvatar={handleUpdateAvatar}*/}
-        {/*  onClose={closeAllPopups}*/}
-        {/*/>*/}
+        <ProfileApp/>
         <InfoTooltip
           isOpen={isInfoToolTipOpen}
           onClose={closeAllPopups}
